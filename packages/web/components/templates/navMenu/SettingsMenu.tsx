@@ -172,14 +172,6 @@ export function SettingsMenu(): JSX.Element {
               Feedback
             </Button>
           </StyledLink>
-          <ExternalLink
-            destination="https://blog.omnivore.app/p/contributing-to-omnivore"
-            title="Contribute"
-          />
-          <ExternalLink
-            destination="https://docs.omnivore.app"
-            title="Documentation"
-          />
         </VStack>
         <NavMenuFooter />
       </Box>

@@ -547,7 +547,7 @@ const JustAddedHomeSection = (props: HomeSectionProps): JSX.Element => {
           <Button
             style="link"
             onClick={(event) => {
-              router.push('/library')
+              router.push('/l/library')
               event.preventDefault()
             }}
             css={{

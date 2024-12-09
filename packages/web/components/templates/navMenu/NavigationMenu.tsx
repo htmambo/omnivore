@@ -330,7 +330,7 @@ function NavButton(props: NavButtonProps): JSX.Element {
       }}
       title={props.text}
       onClick={(e) => {
-        router.push(`/` + props.section)
+        router.push(`/l/` + props.section)
       }}
     >
       {props.icon}

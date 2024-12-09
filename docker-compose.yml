@@ -16,9 +16,11 @@ services:
     container_name: "omnivore-postgres"
     expose:
       - 5432
-    ports:
-      - "5432:5432"
+    volumes:
+      - ./data/pg-data:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
     environment:
+      TZ: Asia/Shanghai
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: omnivore
@@ -38,9 +40,11 @@ services:
     container_name: "omnivore-postgres-replica"
     expose:
       - 5433
-    ports:
-      - "5433:5432"
+    volumes:
+      - ./data/pg-data-replicator:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
     environment:
+      TZ: Asia/Shanghai
       PGUSER: replicator
       PGPASSWORD: replicator_password
     command: |
@@ -63,7 +67,10 @@ services:
       dockerfile: ./packages/db/Dockerfile
     container_name: "omnivore-migrate"
     command: '/bin/sh ./packages/db/setup.sh' # Also create a demo user with email: demo@omnivore.app, password: demo_password
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     environment:
+      - TZ=Asia/Shanghai
       - PGPASSWORD=postgres
       - POSTGRES_USER=postgres
       - PG_HOST=postgres
@@ -78,13 +85,20 @@ services:
       context: .
       dockerfile: ./packages/api/Dockerfile
     container_name: "omnivore-api"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - 8080
     ports:
       - "4000:8080"
     healthcheck:
       test: ["CMD-SHELL", "nc -z 0.0.0.0 8080 || exit 1"]
       interval: 15s
       timeout: 90s
+    env_file:
+      - ./.env
     environment:
+      - TZ=Asia/Shanghai
       - API_ENV=local
       - PG_HOST=postgres
       - PG_USER=app_user
@@ -96,10 +110,12 @@ services:
       - IMAGE_PROXY_SECRET=some-secret
       - JWT_SECRET=some_secret
       - SSO_JWT_SECRET=some_sso_secret
-      - CLIENT_URL=http://localhost:3000
+      - CLIENT_URL=${BASE_URL}
       - GATEWAY_URL=http://localhost:8080/api
       - CONTENT_FETCH_URL=http://content-fetch:8080/?token=some_token
-      - REDIS_URL='redis://redis:6379'
+      - REDIS_URL=redis://redis:6379
+      - MQ_REDIS_URL=redis://redis:6379
+      - LANG=C.UTF-8
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -109,18 +125,26 @@ services:
       context: .
       dockerfile: ./packages/web/Dockerfile
       args:
-        - APP_ENV=prod
-        - BASE_URL=http://localhost:3000
-        - SERVER_BASE_URL=http://localhost:4000
-        - HIGHLIGHTS_BASE_URL=http://localhost:3000
+        - APP_ENV=${APP_ENV}
+        - BASE_URL=${BASE_URL}
+        - SERVER_BASE_URL=${SERVER_BASE_URL}
+        - HIGHLIGHTS_BASE_URL=${HIGHLIGHTS_BASE_URL}
     container_name: "omnivore-web"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - 8080
     ports:
       - "3000:8080"
+    env_file:
+      - ./.env
     environment:
-      - NEXT_PUBLIC_APP_ENV=prod
-      - NEXT_PUBLIC_BASE_URL=http://localhost:3000
-      - NEXT_PUBLIC_SERVER_BASE_URL=http://localhost:4000
-      - NEXT_PUBLIC_HIGHLIGHTS_BASE_URL=http://localhost:3000
+      - TZ=Asia/Shanghai
+      - NEXT_PUBLIC_APP_ENV=${APP_ENV}
+      - NEXT_PUBLIC_BASE_URL=${BASE_URL}
+      - NEXT_PUBLIC_SERVER_BASE_URL=${SERVER_BASE_URL}
+      - NEXT_PUBLIC_HIGHLIGHTS_BASE_URL=${HIGHLIGHTS_BASE_URL}
+      - LANG=C.UTF-8
     depends_on:
       api:
         condition: service_healthy
@@ -130,6 +154,10 @@ services:
       context: .
       dockerfile: ./packages/content-fetch/Dockerfile
     container_name: "omnivore-content-fetch"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - 8080
     ports:
       - "9090:8080"
     environment:
@@ -137,6 +165,8 @@ services:
       - VERIFICATION_TOKEN=some_token
       - REST_BACKEND_ENDPOINT=http://api:8080/api
       - REDIS_URL=redis://redis:6379
+      - MQ_REDIS_URL=redis://redis:6379
+      - LANG=C.UTF-8
     depends_on:
       redis:
         condition: service_healthy
@@ -144,9 +174,12 @@ services:
         condition: service_healthy
 
   redis:
-    image: "redis:7.2.4"
+    image: "redis:alpine"
     container_name: "omnivore-redis"
-    ports:
-      - "6379:6379"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./data/redis:/data
+      - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
