@@ -59,10 +59,8 @@ interface FetchResult {
   contentType?: string
 }
 
-const storage = process.env.GCS_UPLOAD_SA_KEY_FILE_PATH
-  ? new Storage({ keyFilename: process.env.GCS_UPLOAD_SA_KEY_FILE_PATH })
-  : new Storage()
-const bucketName = process.env.GCS_UPLOAD_BUCKET || 'omnivore-files'
+const storage = new Storage()
+const bucketName = 'omnivore-files'
 
 const NO_CACHE_URLS = [
   'https://deviceandbrowserinfo.com/are_you_a_bot',

@@ -22,7 +22,7 @@ interface Claims {
 }
 
 const storage = new Storage()
-const GCS_BUCKET = process.env.GCS_UPLOAD_BUCKET || 'omnivore-export'
+const GCS_BUCKET = 'omnivore-export'
 
 const createGCSFile = (bucket: string, filename: string): File => {
   return storage.bucket(bucket).file(filename)
